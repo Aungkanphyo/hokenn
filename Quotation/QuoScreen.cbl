@@ -19,6 +19,11 @@
            05 WS-MaxPrice PIC 9(8) VALUE 0.
            05 WS-ValidFlag PIC X VALUE 'N'.
 
+      *Coverage Period Multiplier Constants
+       01 WS-Multiplier-Constants.
+           05 C-Mult-12 PIC 9V9 VALUE 1.0.
+           05 C-MULT-24         PIC 9V9 VALUE 1.8.
+           05 C-MULT-36         PIC 9V9 VALUE 2.5.
        01 WS-Premium.
            05 WS-CoveragePeriod PIC 99 VALUE 0.
            05 WS-InternalCode   PIC X(3) VALUE SPACES.
@@ -144,7 +149,7 @@
       *    Purchase Date Input & Validation
            MOVE SPACES TO WS-PurchaseDate.
            PERFORM UNTIL WS-PurchaseDate NOT = SPACES
-               DISPLAY "Enter Purchase Date (2026-04-01): " 
+               DISPLAY "Enter Purchase Date (2026/04/01): " 
                WITH NO ADVANCING
                ACCEPT WS-PurchaseDate
                IF WS-PurchaseDate = SPACES
@@ -177,13 +182,13 @@
 
            EVALUATE WS-CoveragePeriod
                WHEN 12
-                   MOVE 1.0 TO WS-Multiplier
+                   MOVE C-Mult-12 TO WS-Multiplier
                    MOVE "P12" TO WS-InternalCode
                WHEN 24
-                   MOVE 1.8 TO WS-Multiplier
+                   MOVE C-MULT-24 TO WS-Multiplier
                    MOVE "P24" TO WS-InternalCode
                WHEN 36
-                   MOVE 2.5 TO WS-Multiplier
+                   MOVE C-MULT-36 TO WS-Multiplier
                    MOVE "P36" TO WS-InternalCode
            END-EVALUATE.
 
