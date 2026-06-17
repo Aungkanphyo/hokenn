@@ -4,14 +4,41 @@
       *
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT OPTIONAL AppFile ASSIGN TO "Screen3/T_Application.csv"
+               ORGANIZATION IS LINE SEQUENTIAL
+               FILE STATUS IS FS-APP.
       *
        DATA DIVISION.
+       FILE SECTION.
+       FD  AppFile.
+       01  App-Record-Buf PIC X(400).
+
        WORKING-STORAGE SECTION.
+       01 FS-APP PIC XX.
        01 WS-DeviceType PIC X(10).
        01 WS-DeviceModel PIC X(25).
        01 WS-ModelChoice PIC 9 VALUE 0.
        01 WS-PurchasePrice PIC 9(8).
        01 WS-PurchaseDate PIC X(10).
+
+      *To check the date by breaking it down into pieces
+       01 WS-DateFields REDEFINES WS-PurchaseDate.
+           05 WS-Date-Year   PIC 9(4).
+           05 WS-Date-Sep1   PIC X.
+           05 WS-Date-Month  PIC 9(2).
+           05 WS-Date-Sep2   PIC X.
+           05 WS-Date-Day    PIC 9(2).
+
+      * variables for date validation
+       01 WS-DateValidation.
+           05 WS-Date-Valid-Flag PIC X VALUE 'N'.
+           05 WS-Max-Days        PIC 9(2) VALUE 0.
+           05 WS-Temp-Calc       PIC 9(4) VALUE 0.
+           05 WS-Rem-4           PIC 9(4) VALUE 0.
+           05 WS-Rem-100         PIC 9(4) VALUE 0.
+           05 WS-Rem-400         PIC 9(4) VALUE 0.
 
        01 WS-Purchase.
            05 WS-CategoryChoice PIC 9 VALUE 0.
@@ -73,7 +100,7 @@
            DISPLAY "6. Xiaomi Note 8".
            DISPLAY "------------------------------------------------".
 
-           MOVE SPACES TO WS-ModelChoice.
+           MOVE 0 TO WS-ModelChoice.
            PERFORM UNTIL WS-ModelChoice >=1 AND WS-ModelChoice <= 6
                DISPLAY "Enter choice (1-6): " WITH NO ADVANCING
                ACCEPT WS-ModelChoice
@@ -147,13 +174,58 @@
            END-PERFORM.
 
       *    Purchase Date Input & Validation
-           MOVE SPACES TO WS-PurchaseDate.
-           PERFORM UNTIL WS-PurchaseDate NOT = SPACES
-               DISPLAY "Enter Purchase Date (2026/04/01): " 
+           MOVE 'N' TO WS-Date-Valid-Flag.
+           PERFORM UNTIL WS-Date-Valid-Flag = 'Y'
+               DISPLAY "Enter Purchase Date (YYYY/MM/DD): "
                WITH NO ADVANCING
                ACCEPT WS-PurchaseDate
-               IF WS-PurchaseDate = SPACES
-                   DISPLAY "Error: Purchase Date is required!"
+
+      *        Format and Numeric Check (Example: 2026/04/01)
+               IF WS-Date-Sep1 NOT = '/' OR WS-Date-Sep2 NOT = '/' OR
+                   WS-Date-Year NOT NUMERIC OR
+                   WS-Date-Month NOT NUMERIC OR
+                   WS-Date-Day NOT NUMERIC
+                   DISPLAY "Error: Invalid format! Format must be
+      -             "YYYY/MM/DD."
+                   MOVE 'N' TO WS-Date-Valid-Flag
+               ELSE
+      *            Month check
+                   IF WS-Date-Month < 1 OR WS-Date-Month > 12
+                       DISPLAY "Error: Invalid Month! Must be 01 to 12."
+                       MOVE 'N' TO WS-Date-Valid-Flag
+                   ELSE
+      *       Calculating the date for the selected month
+                       EVALUATE WS-Date-Month
+                          WHEN 01 WHEN 03 WHEN 05 WHEN 07 WHEN 08 
+                          WHEN 10 WHEN 12
+                           MOVE 31 TO WS-Max-Days
+                          WHEN 04 WHEN 06 WHEN 09 WHEN 11
+                           MOVE 30 TO WS-Max-Days
+                          WHEN 02
+      *           Calculating whether it is a Leap Year or not
+                           DIVIDE WS-Date-Year BY 4 
+                               GIVING WS-Temp-Calc REMAINDER WS-Rem-4
+                           DIVIDE WS-Date-Year BY 100 
+                               GIVING WS-Temp-Calc REMAINDER WS-Rem-100
+                           DIVIDE WS-Date-Year BY 400 
+                               GIVING WS-Temp-Calc REMAINDER WS-Rem-400
+                           IF (WS-Rem-4 = 0 AND WS-Rem-100 NOT = 0)
+                               OR (WS-Rem-400 = 0)   
+                               MOVE 29 TO WS-Max-Days
+                           ELSE
+                               MOVE 28 TO WS-Max-Days
+                           END-IF
+                       END-EVALUATE
+
+                       IF WS-Date-Day < 1 OR WS-Date-Day > WS-Max-Days
+                          DISPLAY "Error: Invalid Day for this month!"
+                          DISPLAY "Maximum allowed days for this month:"
+                                   WS-Max-Days
+                          MOVE 'N' TO WS-Date-Valid-Flag
+                       ELSE
+                          MOVE 'Y' TO WS-Date-Valid-Flag   
+                       END-IF
+                   END-IF
                END-IF
            END-PERFORM.
 
@@ -195,6 +267,11 @@
       *    Calculate Estimated Premium
            COMPUTE WS-EstPremium ROUNDED = 
                WS-PurchasePrice * WS-BaseRate * WS-Multiplier.
+      *    display estimated premium in Screen 1
+           MOVE WS-EstPremium TO WS-DisplayPremium.
+           DISPLAY "------------------------------------------------".
+           DISPLAY "Estimate Premium: " WS-DisplayPremium.
+           DISPLAY "------------------------------------------------".
 
            MOVE WS-DeviceType TO QD-DeviceType.
            MOVE WS-DeviceModel TO QD-DeviceModel.
