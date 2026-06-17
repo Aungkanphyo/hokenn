@@ -71,7 +71,7 @@
        LINKAGE SECTION.
        01 LNK-CombineData.
            05 LNK-C-DeviceType     PIC X(10).
-           05 LNK-C-DeviceModel    PIC X(15).
+           05 LNK-C-DeviceModel    PIC X(25).
            05 LNK-C-PurchasePrice  PIC 9(8).
            05 LNK-C-PurchaseDate   PIC X(10).
            05 LNK-C-CoveragePeriod PIC 99.

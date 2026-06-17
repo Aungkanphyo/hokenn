@@ -38,7 +38,7 @@
       * Structure to be merged to continue to Screen 3
        01 WS-CombineData.
            05 WS-C-DeviceType     PIC X(10).
-           05 WS-C-DeviceModel    PIC X(15).
+           05 WS-C-DeviceModel    PIC X(25).
            05 WS-C-PurchasePrice  PIC 9(8).
            05 WS-C-PurchaseDate   PIC X(10).
            05 WS-C-CoveragePeriod PIC 99.
@@ -49,7 +49,7 @@
        LINKAGE SECTION.
        01 LNK-QuoData.
            05 LNK-DeviceType     PIC X(10).
-           05 LNK-DeviceModel    PIC X(15).
+           05 LNK-DeviceModel    PIC X(25).
            05 LNK-PurchasePrice  PIC 9(8).
            05 LNK-PurchaseDate   PIC X(10).
            05 LNK-CoveragePeriod PIC 99.

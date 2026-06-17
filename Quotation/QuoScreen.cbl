@@ -8,7 +8,8 @@
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01 WS-DeviceType PIC X(10).
-       01 WS-DeviceModel PIC X(15).
+       01 WS-DeviceModel PIC X(25).
+       01 WS-ModelChoice PIC 9 VALUE 0.
        01 WS-PurchasePrice PIC 9(8).
        01 WS-PurchaseDate PIC X(10).
 
@@ -29,7 +30,7 @@
       *    Grouping the data to be passed into a Group Item
            01 WS-QuoData.
                05 QD-DeviceType     PIC X(10).
-               05 QD-DeviceModel    PIC X(15).
+               05 QD-DeviceModel    PIC X(25).
                05 QD-PurchasePrice  PIC 9(8).
                05 QD-PurchaseDate   PIC X(10).
                05 QD-CoveragePeriod PIC 99 VALUE 0.
@@ -57,15 +58,40 @@
            END-PERFORM.
 
       *    Device Model Input & Validation
-           MOVE SPACES TO WS-DeviceModel.
-           PERFORM UNTIL WS-DeviceModel NOT = SPACES
-               DISPLAY "Enter Device Model (e.g., iPhone 15 Pro): "
-               WITH NO ADVANCING
-               ACCEPT WS-DeviceModel
-               IF WS-DeviceModel = SPACES
-                   DISPLAY "Error: Device Model is required!"
+           DISPLAY "------------------------------------------------".
+           DISPLAY "Please choose a Device Model:".
+           DISPLAY "1. iPhone 14 pro max".
+           DISPLAY "2. iPhone 15 pro".
+           DISPLAY "3. iPhone 17".
+           DISPLAY "4. Samsaung Galaxy A17".
+           DISPLAY "5. Samsaung Galaxy S24".
+           DISPLAY "6. Xiaomi Note 8".
+           DISPLAY "------------------------------------------------".
+
+           MOVE SPACES TO WS-ModelChoice.
+           PERFORM UNTIL WS-ModelChoice >=1 AND WS-ModelChoice <= 6
+               DISPLAY "Enter choice (1-6): " WITH NO ADVANCING
+               ACCEPT WS-ModelChoice
+
+               IF WS-ModelChoice < 1 OR WS-ModelChoice > 6
+                  DISPLAY "Error: Invalid choice! Please enter 1 to 6."
                END-IF
            END-PERFORM.
+
+           EVALUATE WS-ModelChoice
+               WHEN 1  
+                   MOVE "iPhone 14 pro max" TO WS-DeviceModel
+               WHEN 2
+                   MOVE "iPhone 15 pro" TO WS-DeviceModel
+               WHEN 3
+                   MOVE "iPhone 17" TO WS-DeviceModel
+               WHEN 4
+                   MOVE "Samsaung Galaxy A17" TO WS-DeviceModel
+               WHEN 5
+                   MOVE "Samsaung Galaxy S24" TO WS-DeviceModel
+               WHEN 6
+                   MOVE "Xiaomi Note 8"       TO WS-DeviceModel
+           END-EVALUATE.
 
       *    Purchase Price Input & Validation
            DISPLAY "Allowed Price Range: 10,000 JPY to 200,000 JPY".
