@@ -1,0 +1,30 @@
+# ==========================================
+# COBOL Compiled Binaries / Executables
+# ==========================================
+/MyInsuranceApp
+**/PlanFileWriting
+**/PlanSelection
+**/QuoScreen
+**/Screen3
+
+*.exe
+*.dll
+*.so
+*.o
+*.obj
+*.int
+*.gnt
+*.lst
+*.cpy.bak
+
+*.csv
+
+#!**/M_Plan.csv
+
+# ==========================================
+# IDE နှင့် OS ဖိုင်များ
+# ==========================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

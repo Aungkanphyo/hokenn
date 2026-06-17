@@ -46,7 +46,7 @@
            MOVE SPACES TO WS-DeviceType.
            PERFORM UNTIL WS-DeviceType = "iPhone" OR
            WS-DeviceType = "Andriod"
-               DISPLAY "Enter Device Type (iPhone / Android): "
+               DISPLAY "Enter Device Type (iPhone / Andriod): "
                WITH NO ADVANCING
                ACCEPT WS-DeviceType
                IF WS-DeviceType NOT = "iPhone" AND
