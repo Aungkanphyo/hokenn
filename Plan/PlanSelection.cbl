@@ -204,8 +204,6 @@
            MOVE LNK-IMEI TO WS-C-IMEI.
            MOVE Target-Plan-Name TO WS-C-PlanName.
 
-           
-
            STOP RUN.
 
        END PROGRAM PLAN-SELECTION-SYSTEM.
