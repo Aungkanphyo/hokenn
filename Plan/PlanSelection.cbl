@@ -66,14 +66,14 @@
        LINKAGE SECTION.
        01 LNK-QuoData.
            05 LNK-DeviceType     PIC X(10).
-           05 LNK-DeviceModel    PIC X(15).
+           05 LNK-DeviceModel    PIC X(25).
            05 LNK-PurchasePrice  PIC 9(8).
            05 LNK-PurchaseDate   PIC X(10).
            05 LNK-CoveragePeriod PIC 99.
            05 LNK-EstPremium     PIC 9(8).
            05 LNK-IMEI PIC X(15). 
 
-       PROCEDURE DIVISION.
+       PROCEDURE DIVISION USING LNK-QuoData.
        MAIN-PROCEDURE.
 
       *>  MAIN LOOP
@@ -204,6 +204,7 @@
            MOVE LNK-IMEI TO WS-C-IMEI.
            MOVE Target-Plan-Name TO WS-C-PlanName.
 
+           CALL 'Screen3' USING WS-CombineData.
            STOP RUN.
 
        END PROGRAM PLAN-SELECTION-SYSTEM.
