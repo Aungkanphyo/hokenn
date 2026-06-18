@@ -22,7 +22,6 @@
        01 WS-ModelChoice PIC 9 VALUE 0.
        01 WS-PurchasePrice PIC 9(8).
        01 WS-PurchaseDate PIC X(10).
-
       *To check the date by breaking it down into pieces
        01 WS-DateFields REDEFINES WS-PurchaseDate.
            05 WS-Date-Year   PIC 9(4).
@@ -30,6 +29,32 @@
            05 WS-Date-Month  PIC 9(2).
            05 WS-Date-Sep2   PIC X.
            05 WS-Date-Day    PIC 9(2).
+
+       01 WS-DeviceIMEI PIC X(15) VALUE SPACES.
+       01  WS-IMEI-Valid-Flag PIC X VALUE 'N'.
+       01  WS-EOF-APP PIC X VALUE 'N'.
+       01  WS-Dup-Flag PIC X VALUE 'N'.
+      *Flag that control the entire process to restart from the beginning
+       01 WS-Main-Loop-Flag PIC X VALUE 'N'.
+
+      *To extract data from a CSV file and filter only the IMEI
+       01  WS-CSV-FIELDS.
+           05  F-NAME           PIC X(50).
+           05  F-PHONE          PIC X(20).
+           05  F-EMAIL          PIC X(50).
+           05  F-DOB            PIC X(20).
+           05  F-ADDRESS        PIC X(100).
+           05  F-DATE           PIC X(20).
+           05  F-TIME           PIC X(20).
+           05  F-STATUS         PIC X(20).
+           05  F-DEVTYPE        PIC X(20).
+           05  F-DEVMODEL       PIC X(50).
+           05  F-PRICE          PIC X(20).
+           05  F-PURDATE        PIC X(20).
+           05  F-PERIOD         PIC X(20).
+           05  F-PREMIUM        PIC X(20).
+           05  F-PLANCODE       PIC X(20).
+           05  F-IMEI           PIC X(15).
 
       * variables for date validation
        01 WS-DateValidation.
@@ -61,12 +86,13 @@
 
       *    Grouping the data to be passed into a Group Item
            01 WS-QuoData.
-               05 QD-DeviceType     PIC X(10).
-               05 QD-DeviceModel    PIC X(25).
-               05 QD-PurchasePrice  PIC 9(8).
-               05 QD-PurchaseDate   PIC X(10).
+               05 QD-DeviceType PIC X(10).
+               05 QD-DeviceModel PIC X(25).
+               05 QD-PurchasePrice PIC 9(8).
+               05 QD-PurchaseDate PIC X(10).
                05 QD-CoveragePeriod PIC 99 VALUE 0.
-               05 QD-EstPremium     PIC 9(8) VALUE 0. 
+               05 QD-EstPremium PIC 9(8) VALUE 0.
+               05 QD-IMEI PIC X(15).
 
       *
        PROCEDURE DIVISION.
@@ -75,8 +101,12 @@
            DISPLAY "        QUOTATION SCREEN - INPUT ITEMS          ".
            DISPLAY "================================================".
            
+      * Outer Loop for the entire process   
+           MOVE 'N' TO WS-Main-Loop-Flag
+           PERFORM UNTIL WS-Main-Loop-Flag = 'Y'
+
       *    Device Type Input & Validation
-           MOVE SPACES TO WS-DeviceType.
+           MOVE SPACES TO WS-DeviceType
            PERFORM UNTIL WS-DeviceType = "iPhone" OR
            WS-DeviceType = "Andriod"
                DISPLAY "Enter Device Type (iPhone / Andriod): "
@@ -84,23 +114,23 @@
                ACCEPT WS-DeviceType
                IF WS-DeviceType NOT = "iPhone" AND
                WS-DeviceType NOT = "Andriod"
-               DISPLAY "Error: Please enter either 'iPhone'
-      -        "or 'Android'."
+               DISPLAY "Error: Please enter either 'iPhone' "
+                       "or 'Android'."
                END-IF
-           END-PERFORM.
+           END-PERFORM
 
       *    Device Model Input & Validation
-           DISPLAY "------------------------------------------------".
-           DISPLAY "Please choose a Device Model:".
-           DISPLAY "1. iPhone 14 pro max".
-           DISPLAY "2. iPhone 15 pro".
-           DISPLAY "3. iPhone 17".
-           DISPLAY "4. Samsaung Galaxy A17".
-           DISPLAY "5. Samsaung Galaxy S24".
-           DISPLAY "6. Xiaomi Note 8".
-           DISPLAY "------------------------------------------------".
+           DISPLAY "------------------------------------------------"
+           DISPLAY "Please choose a Device Model:"
+           DISPLAY "1. iPhone 14 pro max"
+           DISPLAY "2. iPhone 15 pro"
+           DISPLAY "3. iPhone 17"
+           DISPLAY "4. Samsaung Galaxy A17"
+           DISPLAY "5. Samsaung Galaxy S24"
+           DISPLAY "6. Xiaomi Note 8"
+           DISPLAY "------------------------------------------------"
 
-           MOVE 0 TO WS-ModelChoice.
+           MOVE 0 TO WS-ModelChoice
            PERFORM UNTIL WS-ModelChoice >=1 AND WS-ModelChoice <= 6
                DISPLAY "Enter choice (1-6): " WITH NO ADVANCING
                ACCEPT WS-ModelChoice
@@ -108,7 +138,7 @@
                IF WS-ModelChoice < 1 OR WS-ModelChoice > 6
                   DISPLAY "Error: Invalid choice! Please enter 1 to 6."
                END-IF
-           END-PERFORM.
+           END-PERFORM
 
            EVALUATE WS-ModelChoice
                WHEN 1  
@@ -123,16 +153,68 @@
                    MOVE "Samsaung Galaxy S24" TO WS-DeviceModel
                WHEN 6
                    MOVE "Xiaomi Note 8"       TO WS-DeviceModel
-           END-EVALUATE.
+           END-EVALUATE
+
+      *    Device IMEI Input & Duplicate Validation Flow
+           MOVE 'N' TO WS-IMEI-Valid-Flag
+           PERFORM UNTIL WS-IMEI-Valid-Flag = 'Y'
+               MOVE SPACES TO WS-DeviceIMEI
+               DISPLAY "Enter Device IMEI (15 digits): " 
+               WITH NO ADVANCING
+               ACCEPT WS-DeviceIMEI
+
+               IF WS-DeviceIMEI NOT NUMERIC OR WS-DeviceIMEI = SPACES
+                   DISPLAY "Error: IMEI must be a 15-digit number!"
+               ELSE
+                   MOVE 'N' TO WS-Dup-Flag
+                   MOVE 'N' TO WS-EOF-APP
+                   OPEN INPUT AppFile
+
+                   IF FS-APP = "00"
+                    PERFORM UNTIL WS-EOF-APP = 'Y' OR WS-Dup-Flag = 'Y'
+                     READ AppFile
+                      AT END MOVE 'Y' TO WS-EOF-APP
+                       NOT AT END
+                        INITIALIZE WS-CSV-FIELDS
+                         UNSTRING App-Record-Buf DELIMITED BY ","
+                          INTO F-NAME F-PHONE F-EMAIL F-DOB F-ADDRESS 
+                           F-DATE F-TIME F-STATUS F-DEVTYPE F-DEVMODEL 
+                            F-PRICE F-PURDATE F-PERIOD F-PREMIUM 
+                            F-PLANCODE F-IMEI
+                           END-UNSTRING
+                                   
+                           IF FUNCTION TRIM(F-IMEI) = 
+                           FUNCTION TRIM(WS-DeviceIMEI)
+                               MOVE 'Y' TO WS-Dup-Flag
+                           END-IF
+                           END-READ
+                       END-PERFORM
+                   END-IF
+                   CLOSE AppFile
+                 IF WS-Dup-Flag = 'Y'
+                       DISPLAY "Error: Duplicate Entry! "
+                               "This IMEI already exists."
+                       DISPLAY "Please restart the process."
+                       DISPLAY "---------------------------------------"
+      *  if duplicate exit imei loop and return the begin outer loop
+                       MOVE 'Y' TO WS-IMEI-Valid-Flag
+                   ELSE
+                       MOVE 'Y' TO WS-IMEI-Valid-Flag
+                   END-IF
+               END-IF
+           END-PERFORM
+
+      * No duplidate, continue remaining steps
+           IF WS-Dup-Flag = 'N'   
 
       *    Purchase Price Input & Validation
-           DISPLAY "Allowed Price Range: 10,000 JPY to 200,000 JPY".
+           DISPLAY "Allowed Price Range: 10,000 JPY to 200,000 JPY"
            DISPLAY "Please choose a Price Category:"
-           DISPLAY "1. LOW    (10,000 ~ 50,000 JPY)".
-           DISPLAY "2. MEDIUM (50,001 ~ 100,000 JPY)".
-           DISPLAY "3. HIGH   (100,001 ~ 200,000 JPY)".
+           DISPLAY "1. LOW    (10,000 ~ 50,000 JPY)"
+           DISPLAY "2. MEDIUM (50,001 ~ 100,000 JPY)"
+           DISPLAY "3. HIGH   (100,001 ~ 200,000 JPY)"
 
-           MOVE 0 TO WS-CategoryChoice.
+           MOVE 0 TO WS-CategoryChoice
            PERFORM UNTIL WS-CategoryChoice = 1 OR
                          WS-CategoryChoice = 2 OR
                          WS-CategoryChoice = 3
@@ -141,10 +223,10 @@
               IF WS-CategoryChoice NOT = 1 AND
                  WS-CategoryChoice NOT = 2 AND
                  WS-CategoryChoice NOT = 3
-                 DISPLAY "Error: Invalid choice! Please enter 1, 2,"
-      -           "or 3."
+                 DISPLAY "Error: Invalid choice! Please enter 1, 2, "
+                         "or 3."
               END-IF
-           END-PERFORM.
+           END-PERFORM
 
       *    Setting Min/Max Range based on selection
            EVALUATE WS-CategoryChoice
@@ -157,7 +239,7 @@
                WHEN 3
                    MOVE 100001 TO WS-MinPrice
                    MOVE 200000 TO WS-MaxPrice
-           END-EVALUATE.
+           END-EVALUATE
 
            MOVE 'N' TO WS-ValidFlag
            PERFORM UNTIL WS-ValidFlag = 'Y'
@@ -171,10 +253,10 @@
               ELSE 
                  DISPLAY "Error: Price is out of the selected range!"
               END-IF
-           END-PERFORM.
+           END-PERFORM
 
       *    Purchase Date Input & Validation
-           MOVE 'N' TO WS-Date-Valid-Flag.
+           MOVE 'N' TO WS-Date-Valid-Flag
            PERFORM UNTIL WS-Date-Valid-Flag = 'Y'
                DISPLAY "Enter Purchase Date (YYYY/MM/DD): "
                WITH NO ADVANCING
@@ -185,8 +267,8 @@
                    WS-Date-Year NOT NUMERIC OR
                    WS-Date-Month NOT NUMERIC OR
                    WS-Date-Day NOT NUMERIC
-                   DISPLAY "Error: Invalid format! Format must be
-      -             "YYYY/MM/DD."
+                   DISPLAY "Error: Invalid format! Format must be "
+                           "YYYY/MM/DD."
                    MOVE 'N' TO WS-Date-Valid-Flag
                ELSE
       *            Month check
@@ -227,17 +309,17 @@
                        END-IF
                    END-IF
                END-IF
-           END-PERFORM.
+           END-PERFORM
 
       *    Coverage Period Input & Validation
-           DISPLAY "------------------------------------------------".
-           DISPLAY "Please choose a Coverage Period:".
-           DISPLAY "- 12 months".
-           DISPLAY "- 24 months".
-           DISPLAY "- 36 months".
-           DISPLAY "------------------------------------------------".
+           DISPLAY "------------------------------------------------"
+           DISPLAY "Please choose a Coverage Period:"
+           DISPLAY "- 12 months"
+           DISPLAY "- 24 months"
+           DISPLAY "- 36 months"
+           DISPLAY "------------------------------------------------"
 
-           MOVE 0 TO WS-CoveragePeriod.
+           MOVE 0 TO WS-CoveragePeriod
            PERFORM UNTIL WS-CoveragePeriod = 12 OR
                          WS-CoveragePeriod = 24 OR
                          WS-CoveragePeriod = 36
@@ -250,7 +332,7 @@
                   WS-CoveragePeriod NOT = 36
                   DISPLAY "Error: Please select 12, 24, or 36 months."
                END-IF
-           END-PERFORM.
+           END-PERFORM
 
            EVALUATE WS-CoveragePeriod
                WHEN 12
@@ -262,25 +344,31 @@
                WHEN 36
                    MOVE C-MULT-36 TO WS-Multiplier
                    MOVE "P36" TO WS-InternalCode
-           END-EVALUATE.
+           END-EVALUATE
 
       *    Calculate Estimated Premium
            COMPUTE WS-EstPremium ROUNDED = 
-               WS-PurchasePrice * WS-BaseRate * WS-Multiplier.
+               WS-PurchasePrice * WS-BaseRate * WS-Multiplier
       *    display estimated premium in Screen 1
-           MOVE WS-EstPremium TO WS-DisplayPremium.
-           DISPLAY "------------------------------------------------".
-           DISPLAY "Estimate Premium: " WS-DisplayPremium.
-           DISPLAY "------------------------------------------------".
+           MOVE WS-EstPremium TO WS-DisplayPremium
+           DISPLAY "------------------------------------------------"
+           DISPLAY "Estimate Premium: " WS-DisplayPremium
+           DISPLAY "------------------------------------------------"
 
-           MOVE WS-DeviceType TO QD-DeviceType.
-           MOVE WS-DeviceModel TO QD-DeviceModel.
-           MOVE WS-PurchasePrice TO QD-PurchasePrice.
-           MOVE WS-PurchaseDate TO QD-PurchaseDate.
-           MOVE WS-CoveragePeriod TO QD-CoveragePeriod.
-           MOVE WS-EstPremium TO QD-EstPremium.
+           MOVE WS-DeviceType TO QD-DeviceType
+           MOVE WS-DeviceModel TO QD-DeviceModel
+           MOVE WS-PurchasePrice TO QD-PurchasePrice
+           MOVE WS-PurchaseDate TO QD-PurchaseDate
+           MOVE WS-CoveragePeriod TO QD-CoveragePeriod
+           MOVE WS-EstPremium TO QD-EstPremium
+           MOVE WS-DeviceIMEI TO QD-IMEI
+
+      *close main loop after all info entered correctly
+           MOVE 'Y' TO WS-Main-Loop-Flag    
       *    Sending data to Screen 2 and CALL
-           CALL 'PLAN-SELECTION-SYSTEM' USING WS-QuoData.
+           CALL 'PLAN-SELECTION-SYSTEM' USING WS-QuoData
+           END-IF
+           END-PERFORM.
 
            STOP RUN.
 

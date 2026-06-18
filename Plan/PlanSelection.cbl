@@ -44,6 +44,7 @@
            05 WS-C-CoveragePeriod PIC 99.
            05 WS-C-EstPremium     PIC 9(8).
            05 WS-C-PlanCode       PIC X(5).
+           05 WS-C-IMEI           PIC X(15).
 
       * data sent from Screen 1 will be received
        LINKAGE SECTION.
@@ -54,6 +55,7 @@
            05 LNK-PurchaseDate   PIC X(10).
            05 LNK-CoveragePeriod PIC 99.
            05 LNK-EstPremium     PIC 9(8).
+           05 LNK-IMEI           PIC X(15).
 
        PROCEDURE DIVISION USING LNK-QuoData.
        MAIN-PROCEDURE.
@@ -129,6 +131,7 @@
            MOVE LNK-CoveragePeriod TO WS-C-CoveragePeriod.
            MOVE LNK-EstPremium TO WS-C-EstPremium.
            MOVE User-Choice TO WS-C-PlanCode.
+           MOVE LNK-IMEI TO WS-C-IMEI.
 
            CALL 'Screen3' USING WS-CombineData.
            STOP RUN.
