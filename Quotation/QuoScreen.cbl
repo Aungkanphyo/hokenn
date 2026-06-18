@@ -9,14 +9,30 @@
            SELECT OPTIONAL AppFile ASSIGN TO "Screen3/T_Application.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-APP.
+
+           SELECT DeviceFile ASSIGN TO "DeviceType.csv"
+               ORGANIZATION IS LINE SEQUENTIAL
+               FILE STATUS IS FS-Device.
       *
        DATA DIVISION.
        FILE SECTION.
        FD  AppFile.
        01  App-Record-Buf PIC X(400).
 
+       FD DeviceFile.
+       01 Device-Record-Buf PIC X(50).
+
        WORKING-STORAGE SECTION.
        01 FS-APP PIC XX.
+       01 FS-Device PIC XX.
+       01 WS-Eof-Device PIC X VALUE 'N'.
+
+      *Array to store filtered models from DeviceType.csv
+       01 WS-Filtered-Table.
+           05 WS-Total-Models PIC 99 VALUE 0.
+           05 WS-Model-Item OCCURS 50 TIMES INDEXED BY model-index.
+               10 WS-Select-Model PIC X(50).
+       01 WS-Display-Num PIC Z9.
        01 WS-DeviceType PIC X(10).
        01 WS-DeviceModel PIC X(25).
        01 WS-ModelChoice PIC 9 VALUE 0.
@@ -70,6 +86,8 @@
            05 WS-MinPrice PIC 9(8) VALUE 0.
            05 WS-MaxPrice PIC 9(8) VALUE 0.
            05 WS-ValidFlag PIC X VALUE 'N'.
+           05 WS-Disp-MinPrice PIC ZZZ,ZZZ,ZZ9.
+           05 WS-Disp-MaxPrice PIC ZZZ,ZZZ,ZZ9. 
 
       *Coverage Period Multiplier Constants
        01 WS-Multiplier-Constants.
@@ -120,40 +138,61 @@
            END-PERFORM
 
       *    Device Model Input & Validation
+           MOVE 0 TO WS-Total-Models
+           MOVE 'N' TO WS-Eof-Device
+           OPEN INPUT DeviceFile
+
+           IF FS-Device = "00"
+            PERFORM UNTIL WS-Eof-Device = 'Y' OR WS-Total-Models >= 50
+             READ DeviceFile
+              AT END MOVE 'Y' TO WS-Eof-Device
+               NOT AT END
+      * if user choose iPhone show only iPhone
+                IF WS-DeviceType = "iPhone" AND 
+                Device-Record-Buf(1:6) = "iPhone"
+                 ADD 1 TO WS-Total-Models
+                  MOVE Device-Record-Buf TO 
+                  WS-Select-Model(WS-Total-Models)
+
+                ELSE IF WS-DeviceType = "Andriod" AND
+                       Device-Record-Buf(1:6) NOT = "iPhone"
+                       ADD 1 TO WS-Total-Models
+                       MOVE Device-Record-Buf TO 
+                       WS-Select-Model(WS-Total-Models)
+                END-IF
+           END-READ
+           END-PERFORM
+           ELSE
+            DISPLAY "Error: Cannot open DeviceType.csv file! Code: " 
+                    FS-Device
+           END-IF
+           CLOSE DeviceFile
+
            DISPLAY "------------------------------------------------"
            DISPLAY "Please choose a Device Model:"
-           DISPLAY "1. iPhone 14 pro max"
-           DISPLAY "2. iPhone 15 pro"
-           DISPLAY "3. iPhone 17"
-           DISPLAY "4. Samsaung Galaxy A17"
-           DISPLAY "5. Samsaung Galaxy S24"
-           DISPLAY "6. Xiaomi Note 8"
+           PERFORM VARYING model-index FROM 1 BY 1 UNTIL
+               model-index > WS-Total-Models
+               MOVE model-index TO WS-Display-Num
+               DISPLAY FUNCTION TRIM(WS-Display-Num)". "
+                       FUNCTION TRIM(WS-Select-Model(model-index))
+           END-PERFORM
            DISPLAY "------------------------------------------------"
 
+      *   Accept choice from user and check whether valid or not
            MOVE 0 TO WS-ModelChoice
-           PERFORM UNTIL WS-ModelChoice >=1 AND WS-ModelChoice <= 6
-               DISPLAY "Enter choice (1-6): " WITH NO ADVANCING
+           PERFORM UNTIL WS-ModelChoice >=1 AND 
+                         WS-ModelChoice <= WS-Total-Models
+               DISPLAY "Enter choice (1-" FUNCTION TRIM(WS-Total-Models)
+                       "): " WITH NO ADVANCING
                ACCEPT WS-ModelChoice
 
-               IF WS-ModelChoice < 1 OR WS-ModelChoice > 6
+               IF WS-ModelChoice < 1 OR WS-ModelChoice > WS-Total-Models
                   DISPLAY "Error: Invalid choice! Please enter 1 to 6."
                END-IF
            END-PERFORM
 
-           EVALUATE WS-ModelChoice
-               WHEN 1  
-                   MOVE "iPhone 14 pro max" TO WS-DeviceModel
-               WHEN 2
-                   MOVE "iPhone 15 pro" TO WS-DeviceModel
-               WHEN 3
-                   MOVE "iPhone 17" TO WS-DeviceModel
-               WHEN 4
-                   MOVE "Samsaung Galaxy A17" TO WS-DeviceModel
-               WHEN 5
-                   MOVE "Samsaung Galaxy S24" TO WS-DeviceModel
-               WHEN 6
-                   MOVE "Xiaomi Note 8"       TO WS-DeviceModel
-           END-EVALUATE
+      *  Inserting the selected model into the main variable
+           MOVE WS-Select-Model(WS-ModelChoice) TO WS-DeviceModel  
 
       *    Device IMEI Input & Duplicate Validation Flow
            MOVE 'N' TO WS-IMEI-Valid-Flag
@@ -243,7 +282,10 @@
 
            MOVE 'N' TO WS-ValidFlag
            PERFORM UNTIL WS-ValidFlag = 'Y'
-              DISPLAY "Enter Price (" WS-MinPrice "-" WS-MaxPrice "):"
+              MOVE WS-MinPrice TO WS-Disp-MinPrice
+              MOVE WS-MaxPrice TO WS-Disp-MaxPrice
+              DISPLAY "Enter Price (" FUNCTION TRIM(WS-Disp-MinPrice) 
+                      "-" FUNCTION TRIM(WS-Disp-MaxPrice) "):"
               WITH NO ADVANCING
               ACCEPT WS-PurchasePrice
 
