@@ -71,6 +71,9 @@
 
         MOVE 'Realme GT 6' TO Device_Record
         WRITE Device_Record.
+
+       MOVE 'iPhone 14 pro max' TO Device_Record
+       WRITE Device_Record.
            close  Device
             STOP RUN.
        END PROGRAM YOUR-PROGRAM-NAME.

@@ -46,6 +46,8 @@
        *> Editing Variables for Numbers
        01 Formatted-Base   PIC ZZ,ZZ9.
        01 Formatted-Max    PIC ZZ,ZZZ,ZZ9.
+       01 Formatted-EstPr PIC ZZ,ZZZ,ZZ9.
+       01 FistMonth-Est pic 9(8).
 
        *> UNSTRING variables
        01 WS-Plan-cd       PIC X(5).
@@ -125,6 +127,7 @@
                                     MOVE Plan_Name TO Target-Plan-Name
                                     MOVE Base_Rate TO Target-Base-Rate
                                        MOVE Max_Payout TO Target-Max-Pay
+                                       
                                    END-IF
                                END-IF
                        END-READ
@@ -137,22 +140,26 @@
                    END-IF
                END-PERFORM
 
+           Compute FistMonth-Est = Target-Base-Rate + LNK-EstPremium
       *>        Formatting Numbers
                MOVE Target-Base-Rate TO Formatted-Base
                MOVE Target-Max-Pay   TO Formatted-Max
+               MOVE FistMonth-Est TO Formatted-EstPr
 
       *>        SHOW PLAN DETAILS
                DISPLAY " "
                DISPLAY "=============================================="
                DISPLAY "Selected Plan : "
                FUNCTION TRIM(Target-Plan-Name)
-               DISPLAY "Base Rate     : "
+               DISPLAY "Base Rate        : "
                        FUNCTION TRIM(Formatted-Base) " JPY"
-               DISPLAY "Coverage      : "
+               DISPLAY "Coverage         : "
                        FUNCTION TRIM(Formatted-Max) " JPY"
+               DISPLAY "First Month Estimated Premium: "
+               FUNCTION TRIM(Formatted-EstPr)" JPY"
                DISPLAY "----------------------------------------------"
-               DISPLAY "Coverages Included:"
-
+               DISPLAY "Coverages Included"
+              
                OPEN INPUT CoverageFile
                MOVE 'N' TO EOF-FLAG
                PERFORM UNTIL EOF-FLAG = 'Y'
@@ -177,6 +184,7 @@
       *>        VALIDATION LOOP FOR CONTINUE INPUT (Only Y or N)
                MOVE 'N' TO Valid-Loop-Input
                PERFORM UNTIL Valid-Loop-Input = 'Y'
+                   Move 0 to FistMonth-Est
                    DISPLAY " "
                    DISPLAY "Do you want to check another plan? (Y/N): "
                    ACCEPT Loop-Flag
