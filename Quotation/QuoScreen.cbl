@@ -46,6 +46,8 @@
            05 WS-Date-Day    PIC 9(2).
        
        01 WS-DeviceIMEI PIC X(15) VALUE SPACES.
+      *for IMEI 15 number check
+       01 WS-IMEI-Input-Buf  PIC X(30) VALUE SPACES.
        01  WS-IMEI-Valid-Flag PIC X VALUE 'N'.
        01  WS-EOF-APP PIC X VALUE 'N'.
        01  WS-Dup-Flag PIC X VALUE 'N'.
@@ -80,6 +82,13 @@
            05 WS-Rem-4           PIC 9(4) VALUE 0.
            05 WS-Rem-100         PIC 9(4) VALUE 0.
            05 WS-Rem-400         PIC 9(4) VALUE 0.
+
+       
+       01 WS-Current-Date-Data.
+           05 WS-Current-Year    PIC 9(4).
+           05 WS-Current-Month   PIC 9(2).
+           05 WS-Current-Day     PIC 9(2).
+           05 FILLER             PIC X(13).
        
        01 WS-Purchase.
            05 WS-CategoryChoice PIC 9 VALUE 0.
@@ -197,13 +206,17 @@
            MOVE 'N' TO WS-IMEI-Valid-Flag
            PERFORM UNTIL WS-IMEI-Valid-Flag = 'Y'
                MOVE SPACES TO WS-DeviceIMEI
+               MOVE SPACES TO WS-IMEI-Input-Buf
                DISPLAY "Enter Device IMEI (15 digits): " 
                WITH NO ADVANCING
-               ACCEPT WS-DeviceIMEI
+               ACCEPT WS-IMEI-Input-Buf
        
-               IF WS-DeviceIMEI NOT NUMERIC OR WS-DeviceIMEI = SPACES
-                   DISPLAY "Error: IMEI must be a 15-digit number!"
+               IF WS-IMEI-Input-Buf(1:15) NOT NUMERIC OR 
+                  WS-IMEI-Input-Buf(16:15) NOT = SPACES
+                   DISPLAY "Error: IMEI must be EXACTLY "
+                           "a 15-digit number!"
                ELSE
+                   MOVE WS-IMEI-Input-Buf(1:15) TO WS-DeviceIMEI
                    MOVE 'N' TO WS-Dup-Flag
                    MOVE 'N' TO WS-EOF-APP
                    OPEN INPUT AppFile
@@ -346,7 +359,22 @@
                                    WS-Max-Days
                           MOVE 'N' TO WS-Date-Valid-Flag
                        ELSE
-                          MOVE 'Y' TO WS-Date-Valid-Flag   
+      *                Future date checking logic
+                          MOVE FUNCTION CURRENT-DATE TO 
+                          WS-Current-Date-Data
+                          
+                          IF WS-Date-Year > WS-Current-Year OR
+                             (WS-Date-Year = WS-Current-Year AND 
+                              WS-Date-Month > WS-Current-Month) OR
+                             (WS-Date-Year = WS-Current-Year AND 
+                              WS-Date-Month = WS-Current-Month AND 
+                              WS-Date-Day > WS-Current-Day)
+                              
+                              DISPLAY "Error: Future date "
+                                      "is not allowed!"
+                              MOVE 'N' TO WS-Date-Valid-Flag
+                          ELSE
+                              MOVE 'Y' TO WS-Date-Valid-Flag   
                        END-IF
                    END-IF
                END-IF

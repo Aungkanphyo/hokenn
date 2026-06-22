@@ -48,6 +48,17 @@
            MOVE 'Y' To Active_Flag
            WRITE M_Plan_Record.
 
+           MOVE 'PLN-H' to Plan_code
+           MOVE ',' To F1
+           MOVE 'High' To Plan_Name
+            MOVE ',' To F2
+           MOVE 500 To Base_Rate
+            MOVE ',' To F3
+           MOVE 30000 To Max_Payout
+            MOVE ',' To F4
+           MOVE 'Y' To Active_Flag
+           WRITE M_Plan_Record.
+
            MOVE 'PLN-S' to Plan_code
             MOVE ',' To F1
            MOVE 'Standard' To Plan_Name
@@ -81,6 +92,8 @@
            Move 'Y' To Enable_Flag
            WRITE Coverage_Record.
 
+         
+
            MOVE 'PLN-L' to Plan_cd
            MOVE ',' to B1
            Move 'Water Damage' to Coverage_Type
@@ -100,6 +113,13 @@
            Move 'Theft' to Coverage_Type
            MOVE ',' to B2
            Move 'N' To Enable_Flag
+           WRITE Coverage_Record.
+
+             MOVE 'PLN-H' to Plan_cd
+           MOVE ',' to B1
+           Move 'Screen Damage' to Coverage_Type
+           MOVE ',' to B2
+           Move 'Y' To Enable_Flag
            WRITE Coverage_Record.
 
       *>      Standard Plan

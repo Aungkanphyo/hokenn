@@ -173,9 +173,22 @@
       * INPUT VALIDATION PARAGRAPHS
       *----------------------------------------------------------------
        VALIDATE-NAME.
+
            IF WS-CUST-NAME = SPACES
                MOVE 1 TO WS-ERR-FLAG
                MOVE "ERROR: NAME FIELD CANNOT BE BLANK!" TO WS-ERR-MSG
+               EXIT PARAGRAPH
+           END-IF.
+
+        IF WS-CUST-NAME(20:1) NOT = " " AND WS-CUST-NAME(19:1) NOT = " "
+               MOVE 0 TO WS-SPACE-COUNT
+               INSPECT WS-CUST-NAME TALLYING WS-SPACE-COUNT FOR ALL " "
+               IF WS-SPACE-COUNT = 0
+                   MOVE 1 TO WS-ERR-FLAG
+                  MOVE "ERROR: NAME IS TOO LONG! MAXIMUM 20 CHARACTERS."
+                   TO WS-ERR-MSG
+                   EXIT PARAGRAPH
+               END-IF
            END-IF.
 
        VALIDATE-PHONE.
@@ -233,7 +246,6 @@
            END-IF.
 
            MOVE WS-EMAIL(1:40) TO WS-EMAIL-FINAL.
-           MOVE FUNCTION UPPER-CASE(WS-EMAIL-FINAL) TO WS-EMAIL-FINAL.
 
            MOVE 0 TO WS-TEMP-COUNT.
            INSPECT WS-EMAIL-FINAL TALLYING WS-TEMP-COUNT FOR ALL "@".
@@ -275,9 +287,9 @@
            PERFORM VARYING WS-IDX FROM WS-IDX BY 1 UNTIL WS-IDX > 40
                EVALUATE TRUE
                    WHEN WS-EMAIL-FINAL(WS-IDX:1) = "."
-                       IF WS-TEMP-COUNT < 3
+                       IF WS-TEMP-COUNT < 1
                            MOVE 1 TO WS-ERR-FLAG
-                     MOVE "ERROR: NEED AT LEAST 3 CHARS BETWEEN @ AND ."
+                     MOVE "ERROR: NEED AT LEAST 1 CHARS BETWEEN @ AND ."
                            TO WS-ERR-MSG
                            EXIT PARAGRAPH
                        ELSE

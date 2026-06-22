@@ -2,6 +2,7 @@ PLN-L ,Screen Damage       ,Y
 PLN-L ,Water Damage        ,N
 PLN-L ,Natural Failure     ,N
 PLN-L ,Theft               ,N
+PLN-H ,Screen Damage       ,Y
 PLN-S ,Screen Damage       ,Y
 PLN-S ,Water Damage        ,Y
 PLN-S ,Natural Failure     ,Y
