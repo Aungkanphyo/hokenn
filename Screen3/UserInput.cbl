@@ -162,6 +162,8 @@
        DISPLAY "ALERT: Address is long! Only First 40 Chars Were Saved "
                    END-IF
                    DISPLAY WS-ERR-MSG
+
+                   CALL 'Screen4' USING LNK-C-IMEI
                END-IF
            END-IF.
 
