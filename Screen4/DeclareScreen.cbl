@@ -1,4 +1,4 @@
-******************************************************************
+      ******************************************************************
       * Author: Cho Zin Nwe
       * Date: 23.6.2026
       * Purpose: Phone Insurance Project Screen 4 (Dynamic Score from File)
@@ -34,11 +34,9 @@
        01 ws-total-score           PIC 999 VALUE 0.
        01 ws-status-result         PIC X(11) VALUE SPACES.
 
-       *> .txt ထဲက ခွဲထုတ်ဖတ်မည့် Variable များ
        01 ws-current-q-text        PIC X(100).
        01 ws-file-score            PIC X(3).
-       
-       *> ဖိုင်ထဲကရမှတ်ကို ဂဏန်းအဖြစ်ပြောင်းရန်နှင့် လက်ရှိမှတ်သိမ်းရန်
+    
        01 ws-numeric-score         PIC 99 VALUE 0.
        01 ws-current-score         PIC 99 VALUE 0.
        01 ws-current-score-disp    PIC Z9.
@@ -69,7 +67,6 @@
 
             MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE-DATA
 
-            *> CSV အစပိုင်း တည်ဆောက်ခြင်း (IMEI , ရက်စွဲ)
             INITIALIZE ws-csv-line
             STRING
                 FUNCTION TRIM(LNK-IMEI) " , "

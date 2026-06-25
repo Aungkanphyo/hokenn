@@ -7,6 +7,7 @@ def process_batch():
     appFile = 'Data/T_Application.csv'
     appFileTmp = 'Data/T_Application_Batch_Tmp.csv'
     declareTmp = 'Data/scree4_tmp.csv'
+    auditFile = 'Data/AuditLog.csv'
 
     pendingUpdate = {}
 
@@ -71,11 +72,6 @@ def process_batch():
         print(f"Error: {declareFile} file not found.")
         return
     
-    # If there is no Pending Status to update, stop T_Application and continue.
-    if not pendingUpdate:
-        print(f"[{time.strftime('%X')}] No Pending status to update. (Checking again in 30s...)")
-        return
-    
     # Updating T_Application.csv using T_Application_Batch_Tmp.csv
     try:
         with open(appFile, 'r', encoding='utf-8') as f_in, \
@@ -92,10 +88,14 @@ def process_batch():
             try:
                 imeiIndex = cleanHeader.index('IMEI')
                 statusIndex = cleanHeader.index('STATUS')
+                nameIndex = cleanHeader.index('NAME')
+                planIndex = cleanHeader.index('PLAN_NAME')
             except ValueError:
                 # If the column name is incorrect, set the default index
                 imeiIndex = 16
                 statusIndex = 8
+                nameIndex = 0
+                planIndex = 15
 
             updatedCount = 0
             for row in reader:
@@ -106,6 +106,32 @@ def process_batch():
                     if currentImei in pendingUpdate and status == 'PENDING':
                         row[statusIndex] = pendingUpdate[currentImei]
                         updatedCount += 1
+
+                        # Check UPDATE_PENDING and accept the change and add it to the AuditLog
+                    elif status.startswith('UPDATE_PENDING'):
+                        # Extracting Old Plan from status (e.g. "UPDATE_PENDING:Standard")
+                        if ':' in status:
+                            _,oldPlan = status.split(':', 1)
+                            oldPlan = oldPlan.strip()
+                        else:
+                            oldPlan = 'Unknown'
+                        
+                        newPlan = row[planIndex].strip()
+                        row[statusIndex] = 'Accepted'
+                        updatedCount += 1
+
+                        # Getting the current date and time
+                        currentDate = time.strftime('%Y/%m/%d')
+                        currentTime = time.strftime('%X')
+                        name = row[nameIndex].strip() if len(row) > nameIndex else ""
+
+                        # Save as a new row at the bottom of the AuditLog.csv file
+                        try:
+                            with open(auditFile, 'a', encoding='utf-8', newline='') as f_audit:
+                                auditWriter = csv.writer(f_audit)
+                                auditWriter.writerow([currentDate, currentTime, currentImei, name, oldPlan, newPlan, 'PLAN_CHANGED'])
+                        except Exception as e:
+                            print(f"Error writing to AuditLog: {e}")
 
                 writer.writerow(row)
 
@@ -120,5 +146,5 @@ def process_batch():
 if __name__=="__main__":
     print("Batch program has started running...")
     while True:
-        process_batch()
         time.sleep(30)
+        process_batch()

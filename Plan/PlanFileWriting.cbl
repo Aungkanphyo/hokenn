@@ -48,17 +48,6 @@
            MOVE 'Y' To Active_Flag
            WRITE M_Plan_Record.
 
-           MOVE 'PLN-H' to Plan_code
-           MOVE ',' To F1
-           MOVE 'High' To Plan_Name
-            MOVE ',' To F2
-           MOVE 500 To Base_Rate
-            MOVE ',' To F3
-           MOVE 30000 To Max_Payout
-            MOVE ',' To F4
-           MOVE 'Y' To Active_Flag
-           WRITE M_Plan_Record.
-
            MOVE 'PLN-S' to Plan_code
             MOVE ',' To F1
            MOVE 'Standard' To Plan_Name
