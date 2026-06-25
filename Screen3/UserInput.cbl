@@ -11,7 +11,7 @@
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT OPTIONAL CUST-TABLE 
-           ASSIGN TO "Screen3/T_Application.csv"
+           ASSIGN TO "Data/T_Application.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-CUST.
 

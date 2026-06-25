@@ -5,19 +5,19 @@
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT AppFile ASSIGN TO "Screen3/T_Application.csv"
+           SELECT AppFile ASSIGN TO "Data/T_Application.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-App.
 
-           SELECT TmpAppFile ASSIGN TO "Screen3/T_Application_Tmp.csv"
+           SELECT TmpAppFile ASSIGN TO "Data/T_Application_Tmp.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-Temp.
 
-           SELECT PlanFile ASSIGN TO "Plan/M_Plan.csv"
+           SELECT PlanFile ASSIGN TO "Data/M_Plan.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-Plan.
 
-           SELECT OPTIONAL AuditFile ASSIGN TO "UpdatePlan/AuditLog.csv"
+           SELECT OPTIONAL AuditFile ASSIGN TO "Data/AuditLog.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-Audit.
       
@@ -52,6 +52,8 @@
        01  WS-EOF-FLAG PIC X VALUE 'N'.
        01  WS-EOF-APP PIC X VALUE 'N'.
        01  WS-Rec-Found PIC X VALUE 'N'.
+       01 WS-IMEI-FOUND PIC X VALUE 'N'.
+       01 WS-Hold-Status PIC X(20) VALUE SPACES.
        01  WS-Search-IMEI PIC X(15) VALUE SPACES.
        01  WS-Confirm PIC X VALUE SPACES.
 
@@ -114,8 +116,18 @@
            PERFORM Find-Application-Record
 
            IF WS-Rec-Found = 'N'
-               DISPLAY "Error: Application with IMEI " WS-Search-IMEI
-                       " not found!"
+               IF WS-IMEI-Found = 'Y'
+               DISPLAY " "
+                   DISPLAY "Error: Cannot update this application!"
+                   DISPLAY "Reason: Status is '" 
+                           FUNCTION TRIM(WS-Hold-Status) "'."
+                   DISPLAY "Only 'Accepted' applications "
+                           "can be modified."
+               ELSE
+                   DISPLAY "Error: Application with IMEI " 
+                            WS-Search-IMEI
+                           " not found!"
+               END-IF
                GOBACK
            END-IF
 
@@ -178,6 +190,10 @@
 
            MOVE 'N' TO WS-EOF-FLAG
            MOVE 'N' TO WS-Rec-Found
+
+           MOVE 'N' TO WS-IMEI-Found
+           MOVE SPACES TO WS-Hold-Status
+
            PERFORM UNTIL WS-EOF-FLAG = 'Y' OR WS-Rec-Found = 'Y'
                READ AppFile
                  AT END MOVE 'Y' TO WS-EOF-FLAG
@@ -193,10 +209,16 @@
 
                        IF FUNCTION TRIM(F-IMEI) = 
                           FUNCTION TRIM(WS-Search-IMEI)
-                           MOVE 'Y' TO WS-Rec-Found
-                           MOVE F-NAME TO WS-Hold-CustName
-                           MOVE F-PLANNAME TO WS-Hold-OldPlan
-                           MOVE F-DEVMODEL TO WS-Hold-DevModel
+
+                          MOVE 'Y' TO WS-IMEI-Found
+                          MOVE F-STATUS TO WS-Hold-Status
+
+                          IF FUNCTION TRIM(F-STATUS) = "Accepted"
+                               MOVE 'Y' TO WS-Rec-Found
+                               MOVE F-NAME TO WS-Hold-CustName
+                               MOVE F-PLANNAME TO WS-Hold-OldPlan
+                               MOVE F-DEVMODEL TO WS-Hold-DevModel
+                          END-IF     
                        END-IF
                    END-IF
                END-READ

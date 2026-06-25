@@ -9,7 +9,7 @@
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT Device ASSIGN TO "DeviceType.csv"
+           SELECT Device ASSIGN TO "Data/DeviceType.csv"
                ORGANIZATION IS Line SEQUENTIAL.
           
        DATA DIVISION.

@@ -5,11 +5,11 @@
        CONFIGURATION SECTION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT OPTIONAL AppFile ASSIGN TO "Screen3/T_Application.csv"
+           SELECT OPTIONAL AppFile ASSIGN TO "Data/T_Application.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-APP.
        
-           SELECT DeviceFile ASSIGN TO "Quotation/DeviceType.csv"
+           SELECT DeviceFile ASSIGN TO "Data/DeviceType.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-Device.
              

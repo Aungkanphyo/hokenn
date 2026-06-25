@@ -4,9 +4,9 @@
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT MasterFile ASSIGN TO "Plan/M_Plan.csv"
+           SELECT MasterFile ASSIGN TO "Data/M_Plan.csv"
                ORGANIZATION IS LINE SEQUENTIAL.
-           SELECT CoverageFile ASSIGN TO "Plan/M_Plan_Coverage.csv"
+           SELECT CoverageFile ASSIGN TO "Data/M_Plan_Coverage.csv"
                ORGANIZATION IS LINE SEQUENTIAL.
 
        DATA DIVISION.
