@@ -184,7 +184,7 @@
       *>        VALIDATION LOOP FOR CONTINUE INPUT (Only Y or N)
                MOVE 'N' TO Valid-Loop-Input
                PERFORM UNTIL Valid-Loop-Input = 'Y'
-                   Move 0 to FistMonth-Est
+      *            Move 0 to FistMonth-Est
                    DISPLAY " "
                    DISPLAY "Do you want to check another plan? (Y/N): "
                    ACCEPT Loop-Flag
@@ -208,7 +208,7 @@
            MOVE LNK-PurchasePrice TO WS-C-PurchasePrice.
            MOVE LNK-PurchaseDate TO WS-C-PurchaseDate.
            MOVE LNK-CoveragePeriod TO WS-C-CoveragePeriod.
-           MOVE LNK-EstPremium TO WS-C-EstPremium.
+           MOVE FistMonth-Est TO WS-C-EstPremium.
            MOVE LNK-IMEI TO WS-C-IMEI.
            MOVE Target-Plan-Name TO WS-C-PlanName.
 

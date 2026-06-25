@@ -16,10 +16,6 @@
            SELECT PlanFile ASSIGN TO "Data/M_Plan.csv"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS FS-Plan.
-
-           SELECT OPTIONAL AuditFile ASSIGN TO "Data/AuditLog.csv"
-               ORGANIZATION IS LINE SEQUENTIAL
-               FILE STATUS IS FS-Audit.
       
        DATA DIVISION.
        FILE SECTION.
@@ -41,19 +37,16 @@
            05 F4 PIC X.
            05 P-Active-Flag PIC X.
 
-       FD AuditFile.
-       01 Audit-Record-Buff PIC X(200).
        WORKING-STORAGE SECTION.
        01  FS-App PIC XX.
        01  FS-Temp PIC XX.
        01  FS-Plan PIC XX.
-       01  FS-Audit PIC XX.
        
        01  WS-EOF-FLAG PIC X VALUE 'N'.
        01  WS-EOF-APP PIC X VALUE 'N'.
        01  WS-Rec-Found PIC X VALUE 'N'.
        01 WS-IMEI-FOUND PIC X VALUE 'N'.
-       01 WS-Hold-Status PIC X(20) VALUE SPACES.
+       01 WS-Hold-Status PIC X(40) VALUE SPACES.
        01  WS-Search-IMEI PIC X(15) VALUE SPACES.
        01  WS-Confirm PIC X VALUE SPACES.
 
@@ -67,7 +60,7 @@
            05  F-POSTAL-CODE PIC X(15).
            05  F-DATE PIC X(20).
            05  F-TIME PIC X(20).
-           05  F-STATUS PIC X(20).
+           05  F-STATUS PIC X(40).
            05  F-DEVTYPE PIC X(20).
            05  F-DEVMODEL PIC X(50).
            05  F-PRICE PIC X(20).
@@ -92,15 +85,6 @@
        01  WS-New-PlanName PIC X(20) VALUE SPACES.
        01  WS-Display-Num PIC Z9.
 
-      *Date and Time for Audit Log
-       01  WS-Sys-Date-Time.
-           05 WS-Sys-Year PIC 9(4).
-           05 WS-Sys-Month PIC 9(2).
-           05 WS-Sys-Day PIC 9(2).
-           05 WS-Sys-Hour PIC 9(2).
-           05 WS-Sys-Min PIC 9(2).
-           05 WS-Sys-Sec PIC 9(2).
-           05 FILLER PIC X(4).
       *
        PROCEDURE DIVISION.
        MAIN-FLOW.
@@ -171,7 +155,6 @@
 
            IF WS-Confirm = 'Y' OR WS-Confirm = 'y'
               PERFORM Update-Application-File
-              PERFORM Write-Audit-Log
               DISPLAY "SUCCESS: Insurance Plan Updated Successfully!"
            ELSE
               DISPLAY "Process Cancelled By User."
@@ -274,6 +257,8 @@
 
                    IF FUNCTION TRIM(F-IMEI) = 
                    FUNCTION TRIM(WS-Search-IMEI)
+                    STRING "UPDATE_PENDING:" FUNCTION TRIM(F-PLANNAME)
+                           DELIMITED BY SIZE INTO F-STATUS
                     MOVE SPACES TO Temp-Record-Buff
                     STRING
                      FUNCTION TRIM(F-NAME) DELIMITED BY SIZE ","
@@ -319,25 +304,6 @@
            END-PERFORM
            CLOSE TmpAppFile
            CLOSE AppFile.
-      *End
-
-      *Start
-       Write-Audit-Log.
-           MOVE FUNCTION CURRENT-DATE TO WS-Sys-Date-Time
-           OPEN EXTEND AuditFile
-           MOVE SPACES TO Audit-Record-Buff
-           STRING
-               WS-Sys-Year "/" WS-Sys-Month "/" WS-Sys-Day ","
-               WS-Sys-Hour ":" WS-Sys-Min ":" WS-Sys-Sec ","
-               FUNCTION TRIM(WS-Search-IMEI) DELIMITED BY SIZE ","
-               FUNCTION TRIM(WS-Hold-CustName) DELIMITED BY SIZE ","
-               FUNCTION TRIM(WS-Hold-OldPlan) DELIMITED BY SIZE ","
-               FUNCTION TRIM(WS-New-PlanName) DELIMITED BY SIZE ","
-               "PLAN_CHANGED" DELIMITED BY SIZE
-               INTO Audit-Record-Buff
-           END-STRING
-           WRITE Audit-Record-Buff
-           CLOSE AuditFile.
       *End
 
        END PROGRAM UpdateScreen.
