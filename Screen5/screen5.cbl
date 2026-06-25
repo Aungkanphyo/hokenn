@@ -1,10 +1,10 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. READ-CSV.
+       PROGRAM-ID. screen5.
 
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT CSV-FILE ASSIGN TO "Screen3/T_Application.csv"
+           SELECT CSV-FILE ASSIGN TO "Data/T_Application.csv"
                ORGANIZATION IS LINE SEQUENTIAL.
 
        DATA DIVISION.
@@ -15,10 +15,9 @@
        WORKING-STORAGE SECTION.
        01  WS-EOF                  PIC X(1) VALUE "N".
        01  WS-FIRST-ROW            PIC X(1) VALUE "Y".
-       01  WS-SEARCH-IMEI          PIC X(15) VALUE "222222222222222".
        01  WS-FOUND                PIC X(1) VALUE "N".
 
-       01 Formatted-Est-Premium    PIC  ZZ,ZZZ,ZZ9.
+       01  Formatted-Est-Premium   PIC ZZ,ZZZ,ZZ9.
 
        01  WS-CSV-FIELDS.
            05 W-NAME               PIC X(30).
@@ -45,7 +44,10 @@
            05 DET-PLAN             PIC X(12) VALUE SPACES.
            05 DET-PREMIUM          PIC X(10) VALUE SPACES.
 
-       PROCEDURE DIVISION.
+       LINKAGE SECTION.
+       01  LNK-IMEI            PIC X(15).
+
+       PROCEDURE DIVISION USING LNK-IMEI.
        MAIN-PROCEDURE.
            
            OPEN INPUT CSV-FILE   
@@ -66,7 +68,8 @@
            
            IF WS-FOUND = "N"
                DISPLAY "---------------------------------------------"
-         DISPLAY "Error: Record with IMEI " WS-SEARCH-IMEI " not found!"
+               DISPLAY "Error: Record with IMEI " 
+               DISPLAY FUNCTION TRIM(LNK-IMEI) " not found!"
                DISPLAY "---------------------------------------------"
            ELSE
                DISPLAY "---------------------------------------------"
@@ -77,21 +80,22 @@
        PARSE-AND-CHECK.
            INITIALIZE WS-CSV-FIELDS
            UNSTRING CSV-RECORD DELIMITED BY ","
-               INTO W-NAME, W-PHONE, W-EMAIL, W-DOB, W-ADDRESS, 
-                    W-POSTAL-CODE, W-DATE, W-TIME, W-STATUS, 
-                    W-DEVICE-TYPE, W-DEVICE-MODEL, W-PURCHASE-PRICE, 
-                    W-PURCHASE-DATE, W-COVERAGE-PERIOD, W-EST-PREMIUM, 
-                    W-PLAN-NAME, W-IMEI
+               INTO W-NAME, W-PHONE, W-EMAIL, W-DOB, 
+                    W-ADDRESS, W-POSTAL-CODE, W-DATE, 
+                    W-TIME, W-STATUS, W-DEVICE-TYPE, 
+                    W-DEVICE-MODEL, W-PURCHASE-PRICE, 
+                    W-PURCHASE-DATE, W-COVERAGE-PERIOD, 
+                    W-EST-PREMIUM, W-PLAN-NAME, W-IMEI
            END-UNSTRING
 
-           IF W-IMEI = WS-SEARCH-IMEI
+           IF W-IMEI = LNK-IMEI
                MOVE "Y" TO WS-FOUND
                
                MOVE W-IMEI        TO DET-IMEI
                MOVE W-NAME        TO DET-NAME
                MOVE W-PLAN-NAME   TO DET-PLAN
                MOVE W-EST-PREMIUM TO DET-PREMIUM
-               Move DET-PREMIUM TO Formatted-Est-Premium
+               MOVE DET-PREMIUM   TO Formatted-Est-Premium
                
                DISPLAY "============ APPLICATION RECEIPT ============"
                DISPLAY " IMEI NO     :      " DET-IMEI
@@ -100,6 +104,7 @@
                DISPLAY " EST PREMIUM : " Formatted-Est-Premium "JPY"
                DISPLAY "============================================="
                DISPLAY "Your Application has been submitted."
-               DISPLAY
-       "The underwriting result will be processed by the nightly batch!"
+               DISPLAY "The underwriting result will be "
+               DISPLAY "processed by the nightly batch!"
            END-IF.
+           

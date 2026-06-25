@@ -1,0 +1,4 @@
+Is the device already damaged?,50
+Is the screen cracked?,30
+Is there any water damage?,40
+Is the device purchased over a year ago?,20
