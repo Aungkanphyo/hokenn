@@ -34,9 +34,11 @@
        01 ws-total-score           PIC 999 VALUE 0.
        01 ws-status-result         PIC X(11) VALUE SPACES.
 
+       *> variable for txt file
        01 ws-current-q-text        PIC X(100).
        01 ws-file-score            PIC X(3).
-    
+       
+       *> store data in file
        01 ws-numeric-score         PIC 99 VALUE 0.
        01 ws-current-score         PIC 99 VALUE 0.
        01 ws-current-score-disp    PIC Z9.
@@ -54,6 +56,10 @@
            05 old_device_flg       PIC X VALUE "N".
            05 spare_flg            PIC X VALUE "N".
 
+      * 
+       01 WS-ANSWERS-TABLE.
+          05 WS-ANSWER-FLG         PIC X VALUE "N" OCCURS 20 TIMES.
+
        01 ws-csv-line              PIC X(1000).
 
        LINKAGE SECTION.
@@ -67,6 +73,7 @@
 
             MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE-DATA
 
+            *> store IMEI number,date and time
             INITIALIZE ws-csv-line
             STRING
                 FUNCTION TRIM(LNK-IMEI) " , "
@@ -75,6 +82,8 @@
                 INTO ws-csv-line
 
             OPEN INPUT question-file
+            MOVE "N" TO EOF
+            
             READ question-file
                 AT END MOVE "Y" TO EOF
             END-READ
@@ -87,7 +96,6 @@
                     INTO ws-current-q-text, ws-file-score
                 END-UNSTRING
 
-               
                 MOVE ws-file-score TO ws-numeric-score
 
                 DISPLAY ws-total-questions ". " 
@@ -103,16 +111,9 @@
                     MOVE FUNCTION UPPER-CASE(ws-response) TO ws-response
                 END-PERFORM
 
-              
-                EVALUATE ws-total-questions
-                    WHEN 1 MOVE ws-response TO damage_flg
-                    WHEN 2 MOVE ws-response TO screen_flg
-                    WHEN 3 MOVE ws-response TO water_flg
-                    WHEN 4 MOVE ws-response TO old_device_flg
-                    WHEN 5 MOVE ws-response TO spare_flg
-                END-EVALUATE
+      *        save question and user input in array table
+                MOVE ws-response TO WS-ANSWER-FLG (ws-total-questions)
 
-               
                 IF ws-response = 'Y' THEN
                     ADD ws-numeric-score TO ws-total-score
                     MOVE ws-numeric-score TO ws-current-score
@@ -120,7 +121,6 @@
                     MOVE 0 TO ws-current-score
                 END-IF
 
-              
                 MOVE ws-current-score TO ws-current-score-disp
                 STRING
                     FUNCTION TRIM(ws-csv-line) " , "
@@ -129,6 +129,7 @@
                     DELIMITED BY SIZE
                     INTO ws-csv-line
 
+                
                 READ question-file
                     AT END MOVE "Y" TO EOF
                 END-READ
@@ -136,7 +137,7 @@
             
             CLOSE question-file.
 
-           
+            *> Conditional Logic 
             EVALUATE TRUE
                 WHEN ws-total-score >= 71
                     MOVE "REJECTED" TO ws-status-result
@@ -150,7 +151,7 @@
                     MOVE "PENDING" TO ws-status-result
             END-EVALUATE.
 
-            
+            *> save in csv file
             STRING
                 FUNCTION TRIM(ws-csv-line) " , "
                 "Status : " FUNCTION TRIM(ws-status-result)
@@ -162,6 +163,7 @@
             WRITE output-record
             CLOSE output-file.
 
+            *> call screen5 and auto rejected score display
             IF ws-status-result = "PENDING" THEN
                 CALL 'screen5' USING LNK-IMEI
             ELSE
@@ -175,4 +177,3 @@
             
             STOP RUN.
        END PROGRAM Screen4.
-       
